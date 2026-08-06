@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Nagpur - Agentic AI Traffic Command</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-serif-heading { font-family: 'Cinzel', serif; }
+    
+    .bg-indian-cream {
+      background-color: #FAF6ED;
+      background-image: radial-gradient(#E8DFD1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Gen-Z Animated Card Micro-Interactions */
+    .fun-card {
+      background: rgba(255, 253, 248, 0.94);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fun-card:hover {
+      transform: translateY(-4px) scale(1.005);
+      box-shadow: 0 20px 35px -10px rgba(184, 74, 57, 0.12);
+    }
+
+    /* Floating Mascot Animation */
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    .animate-mascot {
+      animation: floatBob 3.5s ease-in-out infinite;
+    }
+
+    #traffic-map {
+      width: 100% !important;
+      height: 480px !important;
+      min-height: 480px !important;
+      background-color: #e5e3df;
+      border-radius: 1.25rem;
+      z-index: 10;
+    }
+    
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #FAF6ED; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #E5934C; border-radius: 10px; }
+    .auth-overlay-hidden { display: none !important; }
+  </style>
+</head>
+<body class="bg-indian-cream text-[#3B2A22] min-h-screen flex flex-col antialiased relative">
+
+  <!-- AUTH OVERLAY -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FAF6ED]/95 backdrop-blur-md">
+    <div class="fun-card max-w-md w-full p-8 rounded-3xl border-2 border-[#E8DFD1] shadow-2xl relative overflow-hidden">
+      <div class="h-2 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+      <div class="text-center space-y-3 mb-8 pt-2">
+        <div class="w-16 h-16 rounded-full bg-[#B84A39] mx-auto flex items-center justify-center font-bold text-[#FFFDF8] text-2xl shadow-md border-2 border-[#F2A93B] animate-mascot">NMC</div>
+        <div>
+          <h1 class="text-2xl font-bold font-serif-heading text-[#B84A39] tracking-wide">Smart Nagpur</h1>
+          <p class="text-xs text-[#8C6D58] font-semibold mt-1">Municipal Command Operations Center</p>
+        </div>
+      </div>
+      <form id="login-form" onsubmit="return handleInlineLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Officer Username</label>
+          <input type="text" id="username" required value="admin" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Access Key</label>
+          <input type="password" id="password" required value="admin123" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39]">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-[#B84A39] hover:bg-[#A03E2F] text-[#FFFDF8] font-bold text-xs rounded-2xl shadow-lg transition transform active:scale-95">
+          Authenticate Session
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN NAVIGATION HEADER -->
+  <header class="bg-[#FFFDF8]/90 backdrop-blur-md border-b border-[#E8DFD1] p-4 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-[1400px] mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-full bg-[#B84A39] flex items-center justify-center font-bold text-[#FFFDF8] text-lg shadow-md border-2 border-[#F2A93B]">NMC</div>
+        <div>
+          <h1 class="text-lg font-bold font-serif-heading text-[#B84A39] leading-tight tracking-wide flex items-center gap-2">
+            Smart Nagpur
+            <span class="bg-[#FEF3E2] text-[#E5934C] text-[10px] font-sans font-bold px-2 py-0.5 rounded-full border border-[#F2A93B]/30">v2.4 Live</span>
+          </h1>
+          <p class="text-xs text-[#8C6D58] font-medium">Traffic & Transit Real-Time Telemetry</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-[#634E42]">
+        <a href="index.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+        <a href="zones.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> Zones Directory</a>
+        <a href="traffic.html" class="text-[#B84A39] border-b-2 border-[#B84A39] pb-0.5 flex items-center gap-1.5"><i class="fa-solid fa-traffic-light"></i> Traffic & Transit</a>
+        <a href="alerts.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-bell"></i> Alerts & Emergency</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 text-xs font-mono bg-[#FAF6ED] px-3.5 py-1.5 rounded-full border border-[#E8DFD1] text-[#8C6D58]">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#557C60] animate-pulse"></span>
+          <span id="live-time">--:--:--</span>
+        </div>
+        <button onclick="handleInlineLogout()" class="px-4 py-2 bg-[#F2EBDC] hover:bg-[#B84A39] text-[#634E42] hover:text-[#FFFDF8] rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto space-y-6 pb-28">
+    
+    <!-- Hero Banner Card -->
+    <div class="fun-card p-6 rounded-3xl border border-[#E8DFD1] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+      <div class="h-1.5 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+      <div>
+        <span class="text-[11px] font-bold text-[#D98353] uppercase tracking-widest block mb-1">⚡ Mobility Intelligence & Multi-Agent AI</span>
+        <h2 class="text-2xl font-bold font-serif-heading text-[#B84A39] flex items-center gap-3">
+          <span class="w-10 h-10 rounded-full bg-[#FEF3E2] text-[#E5934C] flex items-center justify-center text-sm shadow-sm animate-mascot"><i class="fa-solid fa-robot"></i></span>
+          Autonomous Traffic Telemetry & Groq AI Agent
+        </h2>
+        <p class="text-xs text-[#8C6D58] mt-1 font-medium">Real-time corridor telemetry paired with autonomous LLM dispatch planning.</p>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="toggleTrafficFlowLayer()" id="btn-toggle-traffic" class="px-4 py-2.5 bg-[#B84A39] hover:bg-[#A03E2F] text-[#FFFDF8] text-xs font-bold rounded-2xl transition shadow-md flex items-center gap-2 active:scale-95">
+          <i class="fa-solid fa-layer-group"></i> Toggle Live Traffic
+        </button>
+      </div>
+    </div>
+
+    <!-- Agent Control Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-8 fun-card p-5 rounded-3xl border border-[#E8DFD1] flex flex-col space-y-4">
+        <div class="flex justify-between items-center border-b border-[#E8DFD1] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#557C60] animate-ping"></span>
+            <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-brain text-[#B84A39]"></i> Agentic AI Telemetry Evaluator
+            </h3>
+          </div>
+          <button onclick="runAgenticAnalysis()" id="btn-run-agent" class="px-3.5 py-1.5 bg-[#557C60] hover:bg-[#43644d] text-[#FFFDF8] text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5 active:scale-95">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Telemetry Audit
+          </button>
+        </div>
+
+        <div id="ai-agent-output" class="bg-[#FAF6ED] p-4 rounded-2xl border border-[#E8DFD1] text-xs space-y-2 custom-scroll max-h-[160px] overflow-y-auto">
+          <p class="text-[#8C6D58] italic"><i class="fa-solid fa-circle-info mr-1"></i> Click <b>"Run AI Telemetry Audit"</b> to trigger Groq LLM agent analysis on current congestion nodes.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 fun-card p-5 rounded-3xl border border-[#E8DFD1] flex flex-col justify-between space-y-3">
+        <div>
+          <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-comments text-[#E5934C]"></i> Officer Operations Copilot
+          </h3>
+          <p class="text-[11px] text-[#8C6D58]">Ask Groq AI to execute dispatch actions or reroute strategies.</p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex gap-1.5 flex-wrap">
+            <button onclick="quickPrompt('Draft emergency reroute for Variety Square congestion')" class="px-2.5 py-1 bg-[#FAF6ED] hover:bg-[#E8DFD1] border border-[#E8DFD1] text-[10px] font-bold text-[#634E42] rounded-xl transition active:scale-95">Reroute Variety Sq</button>
+            <button onclick="quickPrompt('Optimize Metro train frequency for peak hours')" class="px-2.5 py-1 bg-[#FAF6ED] hover:bg-[#E8DFD1] border border-[#E8DFD1] text-[10px] font-bold text-[#634E42] rounded-xl transition active:scale-95">Metro Peak Plan</button>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="copilot-input" onkeypress="if(event.key==='Enter') sendCopilotQuery()" placeholder="Enter command..." class="flex-1 bg-[#FFFDF8] border border-[#E8DFD1] rounded-xl px-3 py-2 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39]">
+            <button onclick="sendCopilotQuery()" class="px-3.5 py-2 bg-[#B84A39] text-[#FFFDF8] font-bold text-xs rounded-xl shadow-sm hover:bg-[#A03E2F] active:scale-95">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map & Live Lists Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-7 fun-card p-4 rounded-3xl border border-[#E8DFD1] flex flex-col">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 px-2">
+          <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-map-location-dot text-[#D98353]"></i> Live Nagpur Corridor Map
+          </h3>
+          <span class="text-[10px] font-bold text-[#557C60] bg-[#EAF2EC] px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#557C60] animate-ping"></span> Live Feeds Active
+          </span>
+        </div>
+        <div id="traffic-map"></div>
+      </div>
+
+      <div class="lg:col-span-5 space-y-5">
+        <div class="fun-card p-5 rounded-3xl border border-[#E8DFD1] space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-road text-[#D98353]"></i> Arterial Corridors Speed
+            </h3>
+            <span class="text-[10px] font-mono text-[#8C6D58] bg-[#FAF6ED] px-2 py-0.5 rounded-full border border-[#E8DFD1]">Sync: 5s</span>
+          </div>
+          <div id="corridor-speed-list" class="space-y-2 text-xs custom-scroll max-h-[160px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="fun-card p-5 rounded-3xl border border-[#E8DFD1] space-y-3">
+          <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-car-side text-[#B84A39]"></i> Junction Delay Nodes
+          </h3>
+          <div id="junctions-list" class="space-y-2 text-xs custom-scroll max-h-[180px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
+  <!-- Embedded Sitewide Animated AI Chatbot -->
+  <script src="nemo-chatbot.js"></script>
+
+  <script>
+    const EMBEDDED_GROQ_KEY = "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";
+    let trafficMap = null;
+    let trafficFlowPolylines = [];
+    let isTrafficLayerVisible = true;
+
+    const TRAFFIC_JUNCTIONS = [
+      { id: 1, name: "Variety Square (Sitabuldi)", lat: 21.1440, lng: 79.0830, status: "Heavy Jam", waitTime: "9 mins", cause: "Commercial Peak Volume" },
+      { id: 2, name: "CST / Samvidhan Square", lat: 21.1480, lng: 79.0880, status: "Moderate", waitTime: "4 mins", cause: "Normal Signal Cycle" },
+      { id: 3, name: "Indora Chowk (Zone 9)", lat: 21.1710, lng: 79.0980, status: "Heavy Jam", waitTime: "15 mins", cause: "Pipeline Repair Diversion" }
+    ];
+
+    const TRAFFIC_CORRIDORS = [
+      { name: "Wardha Road Corridor", speed: 28, status: "Moderate", color: "#E5934C", coords: [[21.1000, 79.0600], [21.1200, 79.0700], [21.1350, 79.0800], [21.1440, 79.0830]] },
+      { name: "Central Avenue Corridor", speed: 16, status: "Congested", color: "#B84A39", coords: [[21.1440, 79.0830], [21.1480, 79.1000], [21.1500, 79.1200], [21.1520, 79.1400]] }
+    ];
+
+    function initTrafficMap() {
+      const container = document.getElementById('traffic-map');
+      if (!container) return;
+      if (trafficMap !== null) { trafficMap.remove(); trafficMap = null; }
+
+      trafficMap = L.map('traffic-map').setView([21.1458, 79.0882], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(trafficMap);
+
+      renderTrafficLayers();
+      renderJunctionsAndCorridors();
+    }
+
+    function renderTrafficLayers() {
+      if (!trafficMap) return;
+      trafficFlowPolylines.forEach(p => p.remove());
+      trafficFlowPolylines = [];
+
+      TRAFFIC_CORRIDORS.forEach(corridor => {
+        const poly = L.polyline(corridor.coords, { color: corridor.color, weight: 6 }).addTo(trafficMap);
+        trafficFlowPolylines.push(poly);
+      });
+    }
+
+    function toggleTrafficFlowLayer() {
+      if (!trafficMap) return;
+      isTrafficLayerVisible = !isTrafficLayerVisible;
+      trafficFlowPolylines.forEach(p => {
+        if (isTrafficLayerVisible) p.addTo(trafficMap);
+        else p.remove();
+      });
+      const btn = document.getElementById('btn-toggle-traffic');
+      if (btn) {
+        btn.innerHTML = isTrafficLayerVisible 
+          ? `<i class="fa-solid fa-layer-group"></i> Toggle Live Traffic`
+          : `<i class="fa-solid fa-eye-slash"></i> Traffic Hidden`;
+      }
+    }
+
+    function renderJunctionsAndCorridors() {
+      const jList = document.getElementById('junctions-list');
+      if (jList) {
+        jList.innerHTML = TRAFFIC_JUNCTIONS.map(j => `
+          <div class="p-3 bg-[#FFFDF8] rounded-xl border border-[#E8DFD1] flex justify-between items-center shadow-sm">
+            <div>
+              <p class="font-bold text-[#3B2A22] text-xs">${j.name}</p>
+              <p class="text-[10px] text-[#8C6D58]">${j.cause}</p>
+            </div>
+            <span class="px-2 py-1 rounded-md text-[10px] font-bold ${j.status === 'Heavy Jam' ? 'bg-[#FDF2F0] text-[#B84A39]' : 'bg-[#FEF3E2] text-[#E5934C]'}">${j.waitTime}</span>
+          </div>
+        `).join('');
+      }
+
+      const cList = document.getElementById('corridor-speed-list');
+      if (cList) {
+        cList.innerHTML = TRAFFIC_CORRIDORS.map(c => `
+          <div class="p-3 bg-[#FFFDF8] rounded-xl border border-[#E8DFD1] flex justify-between items-center shadow-sm">
+            <span class="font-bold text-[#3B2A22] text-xs">${c.name}</span>
+            <span class="font-mono font-bold text-xs text-[#B84A39] bg-[#FAF6ED] px-2 py-1 rounded-lg border border-[#E8DFD1]">${c.speed} km/h</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    /* ==========================================================================
+       AI TELEMETRY AUDIT & OFFICER COPILOT FUNCTIONS (GROQ LLM INTEGRATION)
+       ========================================================================== */
+
+    async function runAgenticAnalysis() {
+      const outputBox = document.getElementById('ai-agent-output');
+      const btn = document.getElementById('btn-run-agent');
+
+      if (!outputBox) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Auditing Telemetry...`;
+      
+      outputBox.innerHTML = `
+        <div class="flex items-center gap-2 text-[#B84A39] font-bold">
+          <i class="fa-solid fa-brain animate-bounce"></i> Aggregating live corridor speeds & junction delays...
+        </div>
+      `;
+
+      const telemetryContext = `
+        Current Nagpur Live Telemetry Data:
+        Corridors: ${JSON.stringify(TRAFFIC_CORRIDORS)}
+        Junction Delays: ${JSON.stringify(TRAFFIC_JUNCTIONS)}
+      `;
+
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${EMBEDDED_GROQ_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: "You are an autonomous AI Traffic Telemetry Auditor for Nagpur Municipal Corporation. Analyze telemetry datasets and give a concise, structured 3-bullet point executive summary with recommended signal timing adjustments or reroute advisories."
+              },
+              {
+                role: "user",
+                content: `Perform a traffic audit on this live dataset:\n${telemetryContext}`
+              }
+            ],
+            temperature: 0.2
+          })
+        });
+
+        const data = await response.json();
+        let result = "Unable to process audit.";
+        if (data.choices && data.choices[0]) {
+          result = data.choices[0].message.content;
+        }
+
+        outputBox.innerHTML = `
+          <div class="space-y-1 text-[#3B2A22]">
+            <p class="font-bold text-[#557C60] text-[11px] flex items-center gap-1">
+              <i class="fa-solid fa-circle-check"></i> Audit Completed (${new Date().toLocaleTimeString()})
+            </p>
+            <div class="whitespace-pre-line leading-relaxed text-[11px]">${result}</div>
+          </div>
+        `;
+      } catch (err) {
+        outputBox.innerHTML = `<p class="text-[#B84A39] font-bold">Error connecting to AI Agent Service.</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Telemetry Audit`;
+      }
+    }
+
+    function quickPrompt(text) {
+      const input = document.getElementById('copilot-input');
+      if (input) {
+        input.value = text;
+        sendCopilotQuery();
+      }
+    }
+
+    async function sendCopilotQuery() {
+      const input = document.getElementById('copilot-input');
+      const query = input ? input.value.trim() : "";
+      const outputBox = document.getElementById('ai-agent-output');
+
+      if (!query || !outputBox) return;
+
+      outputBox.innerHTML = `
+        <div class="flex items-center gap-2 text-[#E5934C] font-bold">
+          <i class="fa-solid fa-spinner animate-spin"></i> Executing Copilot Query...
+        </div>
+      `;
+
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${EMBEDDED_GROQ_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: "You are the Smart Nagpur Traffic Officer Operations Copilot. Respond briefly and authoritatively with operational steps or traffic management dispatch protocols."
+              },
+              { role: "user", content: query }
+            ],
+            temperature: 0.3
+          })
+        });
+
+        const data = await response.json();
+        let reply = "No response generated.";
+        if (data.choices && data.choices[0]) {
+          reply = data.choices[0].message.content;
+        }
+
+        outputBox.innerHTML = `
+          <div class="space-y-1 text-[#3B2A22]">
+            <p class="font-bold text-[#B84A39] text-[11px] flex items-center gap-1">
+              <i class="fa-solid fa-bullhorn"></i> Copilot Strategy Strategy Generated
+            </p>
+            <div class="whitespace-pre-line leading-relaxed text-[11px]">${reply}</div>
+          </div>
+        `;
+      } catch (err) {
+        outputBox.innerHTML = `<p class="text-[#B84A39] font-bold">Error executing Copilot Command.</p>`;
+      } finally {
+        if (input) input.value = '';
+      }
+    }
+
+    /* ==========================================================================
+       SESSION & INITIALIZATION
+       ========================================================================== */
+
+    function checkSessionState() {
+      const authScreen = document.getElementById('auth-screen');
+      const sessionUser = localStorage.getItem('sm_command_user');
+
+      if (sessionUser) {
+        authScreen.classList.add('auth-overlay-hidden');
+        setTimeout(() => initTrafficMap(), 100);
+      } else {
+        authScreen.classList.remove('auth-overlay-hidden');
+      }
+    }
+
+    function handleInlineLogin(e) {
+      if(e) e.preventDefault();
+      localStorage.setItem('sm_command_user', JSON.stringify({ name: 'Admin Officer' }));
+      checkSessionState();
+      return false;
+    }
+
+    function handleInlineLogout() {
+      localStorage.removeItem('sm_command_user');
+      checkSessionState();
+    }
+
+    setInterval(() => {
+      const el = document.getElementById('live-time');
+      if (el) el.innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    document.addEventListener('DOMContentLoaded', checkSessionState);
+  </script>
+</body>
+</html>
