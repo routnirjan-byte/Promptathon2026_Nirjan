@@ -1,0 +1,60 @@
+/* ==========================================================================
+   Smart Nagpur Platform - Global Stylesheet
+   Global Arial Font + FontAwesome Fix + Custom Background Overlay
+   ========================================================================== */
+
+* {
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Ensure FontAwesome icons use proper icon fonts and don't inherit Arial */
+.fa, .fas, .far, .fal, .fad, .fab, .fa-solid, .fa-regular, .fa-brands {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif !important;
+}
+
+body {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.97)),
+              url('bg.jpg') center/cover no-repeat fixed;
+  color: #f8fafc;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Glassmorphism Card Style */
+.glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Smooth Circular Badges & Avatar System */
+.circle-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle-tag {
+  border-radius: 9999px !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
+}
