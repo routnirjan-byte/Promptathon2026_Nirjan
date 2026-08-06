@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nagpur Emergency & Flood Response | SCOC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  <div id="nav-header"></div>
+
+  <main class="flex-1 p-6 max-w-[1400px] w-full mx-auto space-y-6">
+    <div class="flex justify-between items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+      <div>
+        <span class="text-xs font-mono text-red-400 uppercase tracking-widest block mb-1">NMC Module 02</span>
+        <h2 class="text-2xl font-bold text-white flex items-center gap-3"><i class="fa-solid fa-truck-medical text-red-400"></i> NMC Emergency & Disaster Response</h2>
+        <p class="text-xs text-slate-400 mt-1">Monsoon Nag River inundation and Fire Station monitoring across 10 Zones.</p>
+      </div>
+      <button onclick="triggerEmergencyDispatch()" class="bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold text-xs px-5 py-3 rounded-xl transition shadow-lg shadow-red-600/20 flex items-center gap-2">
+        <i class="fa-solid fa-life-ring"></i> Dispatch Nag River Rescue Fleet
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6"><h3 class="text-xs font-bold text-slate-400 uppercase">NMC Fire & Rescue Deployed</h3><p id="active-units" class="text-4xl font-extrabold text-red-400 font-mono mt-2">19 / 28 Units</p></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6"><h3 class="text-xs font-bold text-slate-400 uppercase">Avg Response (Citywide)</h3><p class="text-4xl font-extrabold text-blue-400 font-mono mt-2">3.1 mins</p></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6"><h3 class="text-xs font-bold text-slate-400 uppercase">Ambazari Overflow Status</h3><p class="text-4xl font-extrabold text-emerald-400 font-mono mt-2">Safe (78%)</p></div>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+      <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2"><i class="fa-solid fa-list-check text-red-400 mr-2"></i> Disaster Response Logs</h3>
+      <div id="domain-logs" class="space-y-2 max-h-[300px] overflow-y-auto">
+        <p class="text-xs text-slate-500 italic">No manual actions taken yet. Click the button above to execute an action.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="agents.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
