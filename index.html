@@ -1,95 +1,266 @@
-// Handle Government Login Redirect
-function handleGovLogin(e) {
-  e.preventDefault();
-  const targetDomain = document.getElementById('gov-domain').value;
-  sessionStorage.setItem('scoc_gov_auth', 'true');
-  window.location.href = targetDomain;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Nagpur - Command Operations Center</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-// Dynamically Inject Universal Nav Header Across Sub-Pages
-document.addEventListener('DOMContentLoaded', () => {
-  const navContainer = document.getElementById('nav-header');
-  if (navContainer) {
-    navContainer.innerHTML = `
-      <header class="border-b border-slate-800 bg-slate-900 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+  <!-- Google Fonts: Elegant Indian-Style Serif Header & Modern Sans Body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-serif-heading {
+      font-family: 'Cinzel', serif;
+    }
+    
+    /* Indian Traditional Soft Canvas Background */
+    .bg-indian-cream {
+      background-color: #FAF6ED;
+      background-image: radial-gradient(#E8DFD1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Soft Pastel Glassmorphism Cards */
+    .pastel-card {
+      background: rgba(255, 253, 248, 0.92);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px -5px rgba(184, 74, 57, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-indian-cream text-[#3B2A22] min-h-screen flex flex-col antialiased">
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FAF6ED]/90 backdrop-blur-md transition-opacity duration-300">
+    <div class="pastel-card max-w-md w-full p-8 rounded-3xl border border-[#E8DFD1] shadow-2xl relative overflow-hidden">
+      <div class="h-1.5 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+      <div class="text-center space-y-3 mb-8 pt-2">
+        <div class="w-16 h-16 rounded-full bg-[#B84A39] mx-auto flex items-center justify-center font-bold text-[#FFFDF8] text-2xl shadow-md border-2 border-[#F2A93B]">
+          NMC
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold font-serif-heading text-[#B84A39] tracking-wide">Smart Nagpur</h1>
+          <p class="text-xs text-[#8C6D58] font-medium mt-1">Municipal Command Operations Center</p>
+        </div>
+      </div>
+
+      <div id="login-error" class="hidden mb-5 p-3 rounded-2xl bg-[#FADBD8] border border-[#F5B7B1] text-[#900C3F] text-xs font-semibold flex items-center justify-center gap-2">
+        <i class="fa-solid fa-circle-exclamation text-[#B84A39]"></i>
+        <span>Invalid Credentials. Default: admin / admin123</span>
+      </div>
+
+      <form id="login-form" onsubmit="return handleInlineLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Officer Username</label>
+          <input type="text" id="username" required placeholder="admin" value="admin" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39] focus:ring-2 focus:ring-[#B84A39]/20 transition shadow-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Access Key</label>
+          <input type="password" id="password" required placeholder="••••••••" value="admin123" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39] focus:ring-2 focus:ring-[#B84A39]/20 transition shadow-sm">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-[#B84A39] hover:bg-[#A03E2F] text-[#FFFDF8] font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Authenticate Session
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD -->
+  <div id="dashboard-app" class="hidden min-h-screen flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="bg-[#FFFDF8]/90 backdrop-blur-md border-b border-[#E8DFD1] p-4 sticky top-0 z-40 shadow-sm">
+      <div class="max-w-[1400px] mx-auto flex justify-between items-center">
+        
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-blue-600/20">
-            <i class="fa-solid fa-city"></i>
+          <div class="w-11 h-11 rounded-full bg-[#B84A39] flex items-center justify-center font-bold text-[#FFFDF8] text-lg shadow-md border-2 border-[#F2A93B]">
+            NMC
           </div>
           <div>
-            <h1 class="text-base font-bold text-slate-100">Smart City Operations Center</h1>
-            <span class="text-xs text-blue-400 font-mono block">Gov Clearance Level: OFFICIAL</span>
+            <h1 class="text-lg font-bold font-serif-heading text-[#B84A39] leading-tight tracking-wide">Smart Nagpur</h1>
+            <p class="text-xs text-[#8C6D58] font-medium">Command Operations Dashboard</p>
           </div>
         </div>
 
-        <nav class="flex items-center gap-2 text-xs font-semibold">
-          <a href="dashboard.html" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
-            <i class="fa-solid fa-gauge mr-1"></i> Dashboard
-          </a>
-          <a href="traffic.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-blue-500/50 text-blue-400 transition">
-            <i class="fa-solid fa-traffic-light mr-1"></i> Traffic
-          </a>
-          <a href="emergency.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-red-500/50 text-red-400 transition">
-            <i class="fa-solid fa-truck-medical mr-1"></i> Emergency
-          </a>
-          <a href="utility.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-amber-400 transition">
-            <i class="fa-solid fa-plug mr-1"></i> Utility
-          </a>
-          <a href="citizen.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 text-emerald-400 transition">
-            <i class="fa-solid fa-bullhorn mr-1"></i> Citizen
-          </a>
-          <a href="index.html" class="ml-4 px-3.5 py-2 rounded-lg bg-red-950/60 border border-red-800/50 text-rose-300 hover:bg-red-900 transition">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </a>
+        <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-[#634E42]">
+          <a href="index.html" class="text-[#B84A39] border-b-2 border-[#B84A39] pb-0.5 flex items-center gap-1.5"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+          <a href="zones.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> Zones Directory</a>
+          <a href="traffic.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-traffic-light"></i> Traffic & Transit</a>
+          <a href="alerts.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-bell"></i> Alerts & Emergency</a>
         </nav>
-      </header>
-    `;
-  }
-});
 
-// Chat Console Helpers
-function appendToConsole(html) {
-  const c = document.getElementById('chat-messages');
-  if (c) {
-    c.innerHTML += html;
-    c.scrollTop = c.scrollHeight;
-  }
-}
-
-function clearConsole() {
-  const c = document.getElementById('chat-messages');
-  if (c) {
-    c.innerHTML = `
-      <div class="bg-slate-950 border border-blue-900/40 p-4 rounded-xl text-slate-300 space-y-1">
-        <p class="font-bold text-blue-400">SCOC Orchestrator Engine Ready.</p>
-        <p class="text-slate-400 text-xs">Console cleared. Enter an incident report.</p>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2 text-xs font-mono bg-[#FAF6ED] px-3.5 py-1.5 rounded-full border border-[#E8DFD1] text-[#8C6D58]">
+            <span class="w-2 h-2 rounded-full bg-[#557C60] animate-pulse"></span>
+            <span id="live-time">--:--:--</span>
+          </div>
+          <button onclick="handleInlineLogout()" class="px-4 py-2 bg-[#F2EBDC] hover:bg-[#B84A39] text-[#634E42] hover:text-[#FFFDF8] rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </div>
       </div>
-    `;
-  }
-}
+    </header>
 
-async function handleUserSubmit(e) {
-  e.preventDefault();
-  const input = document.getElementById('user-input');
-  const text = input.value.trim();
-  if (!text) return;
-
-  appendToConsole(`
-    <div class="text-right">
-      <div class="inline-block bg-blue-950/80 border border-blue-800/50 text-blue-100 p-3 rounded-xl text-left max-w-[85%] font-sans text-xs">
-        <span class="text-[10px] text-blue-400 font-mono font-bold block mb-0.5">[OPERATOR REPORT]</span>
-        ${text}
+    <!-- Content -->
+    <main class="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto space-y-6">
+      
+      <!-- Welcome Banner -->
+      <div class="pastel-card p-6 rounded-3xl border border-[#E8DFD1] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div class="h-1 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+        <div>
+          <span class="text-[11px] font-bold text-[#D98353] uppercase tracking-widest block mb-1">Central Intelligence</span>
+          <h2 class="text-2xl font-bold font-serif-heading text-[#B84A39]">Nagpur City Status Overview</h2>
+          <p class="text-xs text-[#8C6D58] mt-1 font-medium">Real-time telemetric aggregation across municipal water, power, traffic, and emergency response channels.</p>
+        </div>
+        <a href="zones.html" class="px-5 py-3 bg-[#B84A39] hover:bg-[#A03E2F] text-[#FFFDF8] text-xs font-bold rounded-2xl transition shadow-md flex items-center gap-2">
+          <i class="fa-solid fa-map-location-dot"></i> View All 10 Zones
+        </a>
       </div>
-    </div>
-  `);
 
-  input.value = '';
-  await processIncidentPipeline(text, (stepHtml) => appendToConsole(stepHtml));
-}
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div class="pastel-card p-5 rounded-3xl border border-[#E8DFD1] flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-[#8C6D58] uppercase">Municipal Zones</p>
+            <h3 class="text-2xl font-bold text-[#3B2A22] mt-1">10 <span class="text-xs font-normal text-[#557C60]">(8 Optimal)</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-[#FCE8E6] text-[#B84A39] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-city"></i>
+          </div>
+        </div>
 
-function triggerPreset(type) {
-  const input = document.getElementById('user-input');
-  if (type === 'grid_fire') input.value = "CRITICAL: Substation 4 fire and transformer explosion reported.";
-  if (type === 'water_flood') input.value = "ALERT: Water main burst on North Sector Highway causing severe flooding.";
-  handleUserSubmit(new Event('submit'));
-}
+        <div class="pastel-card p-5 rounded-3xl border border-[#E8DFD1] flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-[#8C6D58] uppercase">Water Supply Grid</p>
+            <h3 class="text-2xl font-bold text-[#3B2A22] mt-1">91.6% <span class="text-xs font-normal text-[#557C60]">Avg Level</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-[#E2ECE9] text-[#557C60] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+        </div>
+
+        <div class="pastel-card p-5 rounded-3xl border border-[#E8DFD1] flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-[#8C6D58] uppercase">Maha Metro Transit</p>
+            <h3 class="text-2xl font-bold text-[#3B2A22] mt-1">98.2% <span class="text-xs font-normal text-[#557C60]">On Time</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-[#FEF3E2] text-[#E5934C] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-train-subway"></i>
+          </div>
+        </div>
+
+        <div class="pastel-card p-5 rounded-3xl border border-[#E8DFD1] flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-[#8C6D58] uppercase">Active Alerts</p>
+            <h3 class="text-2xl font-bold text-[#B84A39] mt-1">3 <span class="text-xs font-normal text-[#B84A39]">(1 Critical)</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-[#FADBD8] text-[#900C3F] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Navigation Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="pastel-card p-6 rounded-3xl border border-[#E8DFD1] space-y-4 hover:border-[#B84A39]/30 transition group">
+          <div class="w-12 h-12 rounded-2xl bg-[#FCE8E6] text-[#B84A39] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <h3 class="text-lg font-bold font-serif-heading text-[#3B2A22] group-hover:text-[#B84A39] transition">Zones Directory</h3>
+          <p class="text-xs text-[#8C6D58]">Explore all 10 NMC municipal zones with real-time water levels, power grid status, and emergency alerts on an interactive map.</p>
+          <a href="zones.html" class="inline-flex items-center gap-2 text-xs font-bold text-[#B84A39] hover:gap-3 transition">
+            Explore Zones Map <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+
+        <div class="pastel-card p-6 rounded-3xl border border-[#E8DFD1] space-y-4 hover:border-[#E5934C]/30 transition group">
+          <div class="w-12 h-12 rounded-2xl bg-[#FEF3E2] text-[#E5934C] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-traffic-light"></i>
+          </div>
+          <h3 class="text-lg font-bold font-serif-heading text-[#3B2A22] group-hover:text-[#E5934C] transition">Traffic & Transit</h3>
+          <p class="text-xs text-[#8C6D58]">Monitor traffic junctions, congested corridors, and live status of Maha Metro Aqua and Orange lines across Nagpur.</p>
+          <a href="traffic.html" class="inline-flex items-center gap-2 text-xs font-bold text-[#E5934C] hover:gap-3 transition">
+            Check Transit Status <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+
+        <div class="pastel-card p-6 rounded-3xl border border-[#E8DFD1] space-y-4 hover:border-[#900C3F]/30 transition group">
+          <div class="w-12 h-12 rounded-2xl bg-[#FADBD8] text-[#900C3F] flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <h3 class="text-lg font-bold font-serif-heading text-[#3B2A22] group-hover:text-[#900C3F] transition">Alerts & Emergency</h3>
+          <p class="text-xs text-[#8C6D58]">Review municipal advisories, water pipeline repairs, electrical grid maintenance, and dispatch emergency teams.</p>
+          <a href="alerts.html" class="inline-flex items-center gap-2 text-xs font-bold text-[#900C3F] hover:gap-3 transition">
+            View Emergency Feeds <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    function checkSessionState() {
+      const authScreen = document.getElementById('auth-screen');
+      const dashboardApp = document.getElementById('dashboard-app');
+      const sessionUser = localStorage.getItem('sm_command_user');
+
+      if (sessionUser) {
+        authScreen.classList.add('hidden');
+        dashboardApp.classList.remove('hidden');
+      } else {
+        authScreen.classList.remove('hidden');
+        dashboardApp.classList.add('hidden');
+      }
+    }
+
+    function handleInlineLogin(event) {
+      if (event) event.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+      const errorBox = document.getElementById('login-error');
+
+      if (u === 'admin' && p === 'admin123') {
+        localStorage.setItem('sm_command_user', JSON.stringify({ name: 'Officer Admin' }));
+        if (errorBox) errorBox.classList.add('hidden');
+        checkSessionState();
+      } else {
+        if (errorBox) errorBox.classList.remove('hidden');
+      }
+      return false;
+    }
+
+    function handleInlineLogout() {
+      localStorage.removeItem('sm_command_user');
+      checkSessionState();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSessionState();
+      const timeElem = document.getElementById('live-time');
+      if (timeElem) {
+        const updateTime = () => timeElem.textContent = new Date().toLocaleTimeString();
+        updateTime();
+        setInterval(updateTime, 1000);
+      }
+    });
+  </script>
+  <!-- Include Nemo Chatbot Globally -->
+<script src="nemo-chatbot.js"></script>
+</body>
+</html>
