@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Nagpur - Municipal Zones Directory</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS for Map Engine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Google Fonts: Elegant Indian-Style Serif Header & Modern Sans Body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-serif-heading {
+      font-family: 'Cinzel', serif;
+    }
+    
+    /* Indian Traditional Soft Canvas Background */
+    .bg-indian-cream {
+      background-color: #FAF6ED;
+      background-image: radial-gradient(#E8DFD1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Soft Pastel Glassmorphism Cards */
+    .pastel-card {
+      background: rgba(255, 253, 248, 0.92);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px -5px rgba(184, 74, 57, 0.06);
+    }
+
+    /* Custom scrollbar for directory */
+    #zones-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    #zones-list::-webkit-scrollbar-track {
+      background: #F2EBDC;
+      border-radius: 9999px;
+    }
+    #zones-list::-webkit-scrollbar-thumb {
+      background: #D98353;
+      border-radius: 9999px;
+    }
+    #zones-list::-webkit-scrollbar-thumb:hover {
+      background: #B84A39;
+    }
+
+    /* Leaflet popup customization to match pastel theme */
+    .leaflet-popup-content-wrapper {
+      background: #FFFDF8 !important;
+      color: #3B2A22 !important;
+      border-radius: 16px !important;
+      border: 1px solid #E8DFD1 !important;
+      box-shadow: 0 10px 25px rgba(184, 74, 57, 0.12) !important;
+    }
+    .leaflet-popup-tip {
+      background: #FFFDF8 !important;
+    }
+  </style>
+</head>
+<body class="bg-indian-cream text-[#3B2A22] min-h-screen flex flex-col antialiased">
+
+  <!-- ====================================================================
+       1. AUTHENTICATION OVERLAY (Shown when logged out)
+       ==================================================================== -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FAF6ED]/90 backdrop-blur-md transition-opacity duration-300">
+    <div class="pastel-card max-w-md w-full p-8 rounded-3xl border border-[#E8DFD1] shadow-2xl relative overflow-hidden">
+      
+      <!-- Top Decorative Indian Border Motif -->
+      <div class="h-1.5 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+
+      <div class="text-center space-y-3 mb-8 pt-2">
+        <div class="w-16 h-16 rounded-full bg-[#B84A39] mx-auto flex items-center justify-center font-bold text-[#FFFDF8] text-2xl shadow-md border-2 border-[#F2A93B]">
+          NMC
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold font-serif-heading text-[#B84A39] tracking-wide">Smart Nagpur</h1>
+          <p class="text-xs text-[#8C6D58] font-medium mt-1">Municipal Command Operations Center</p>
+        </div>
+      </div>
+
+      <div id="login-error" class="hidden mb-5 p-3 rounded-2xl bg-[#FADBD8] border border-[#F5B7B1] text-[#900C3F] text-xs font-semibold flex items-center justify-center gap-2">
+        <i class="fa-solid fa-circle-exclamation text-[#B84A39]"></i>
+        <span>Invalid Credentials. Default: admin / admin123</span>
+      </div>
+
+      <form id="login-form" onsubmit="return handleInlineLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Officer Username</label>
+          <input type="text" id="username" required placeholder="admin" value="admin" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39] focus:ring-2 focus:ring-[#B84A39]/20 transition shadow-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#8C6D58] uppercase tracking-wider mb-2">Access Key</label>
+          <input type="password" id="password" required placeholder="••••••••" value="admin123" class="w-full bg-[#FFFDF8] border border-[#E8DFD1] rounded-2xl px-4 py-3 text-xs text-[#3B2A22] focus:outline-none focus:border-[#B84A39] focus:ring-2 focus:ring-[#B84A39]/20 transition shadow-sm">
+        </div>
+        <button type="submit" class="w-full py-3.5 bg-[#B84A39] hover:bg-[#A03E2F] text-[#FFFDF8] font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Authenticate Session
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       2. MAIN DASHBOARD CONTENT
+       ==================================================================== -->
+  <div id="dashboard-app" class="hidden min-h-screen flex flex-col">
+    
+    <!-- Top Header Navigation -->
+    <header class="bg-[#FFFDF8]/90 backdrop-blur-md border-b border-[#E8DFD1] p-4 sticky top-0 z-40 shadow-sm">
+      <div class="max-w-[1400px] mx-auto flex justify-between items-center">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-full bg-[#B84A39] flex items-center justify-center font-bold text-[#FFFDF8] text-lg shadow-md border-2 border-[#F2A93B]">
+            NMC
+          </div>
+          <div>
+            <h1 class="text-lg font-bold font-serif-heading text-[#B84A39] leading-tight tracking-wide">Smart Nagpur</h1>
+            <p class="text-xs text-[#8C6D58] font-medium">Municipal Zones Telemetry</p>
+          </div>
+        </div>
+
+        <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-[#634E42]">
+          <a href="index.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+          <a href="zones.html" class="text-[#B84A39] border-b-2 border-[#B84A39] pb-0.5 flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> Zones Directory</a>
+          <a href="traffic.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-traffic-light"></i> Traffic & Transit</a>
+          <a href="alerts.html" class="hover:text-[#B84A39] transition flex items-center gap-1.5"><i class="fa-solid fa-bell"></i> Alerts & Emergency</a>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2 text-xs font-mono bg-[#FAF6ED] px-3.5 py-1.5 rounded-full border border-[#E8DFD1] text-[#8C6D58]">
+            <span class="w-2 h-2 rounded-full bg-[#557C60] animate-pulse"></span>
+            <span id="live-time">--:--:--</span>
+          </div>
+          <button onclick="handleInlineLogout()" class="px-4 py-2 bg-[#F2EBDC] hover:bg-[#B84A39] text-[#634E42] hover:text-[#FFFDF8] rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto space-y-6">
+      
+      <!-- Operational Banner -->
+      <div class="pastel-card p-6 rounded-3xl border border-[#E8DFD1] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div class="h-1 w-full bg-gradient-to-r from-[#B84A39] via-[#E5934C] to-[#557C60] absolute top-0 left-0"></div>
+        <div>
+          <span class="text-[11px] font-bold text-[#D98353] uppercase tracking-widest block mb-1">Administrative Boundaries</span>
+          <h2 class="text-2xl font-bold font-serif-heading text-[#B84A39] flex items-center gap-3">
+            <span class="w-10 h-10 rounded-full bg-[#FCE8E6] text-[#B84A39] flex items-center justify-center text-sm shadow-sm"><i class="fa-solid fa-map-location-dot"></i></span>
+            Nagpur Municipal Corporation (10 Zones)
+          </h2>
+          <p class="text-xs text-[#8C6D58] mt-1 font-medium">Interactive municipal telemetry map with status isolation filter capabilities.</p>
+        </div>
+        <button onclick="resetMapView()" class="px-4 py-2.5 bg-[#FFFDF8] hover:bg-[#F2EBDC] text-[#3B2A22] text-xs font-bold rounded-2xl transition border border-[#E8DFD1] flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-rotate-right text-[#D98353]"></i> Reset View
+        </button>
+      </div>
+
+      <!-- Geospatial Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Interactive Leaflet Map (7 Columns) -->
+        <div class="lg:col-span-7 pastel-card p-4 rounded-3xl border border-[#E8DFD1] flex flex-col min-h-[540px]">
+          
+          <!-- Map Filter Header -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 px-2">
+            <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-earth-asia text-[#D98353]"></i> Geospatial Telemetry Map
+            </h3>
+
+            <!-- Pastel Filter Buttons -->
+            <div id="status-filter-group" class="flex items-center gap-1 bg-[#FAF6ED] p-1 rounded-2xl border border-[#E8DFD1] text-[11px] font-bold">
+              <button onclick="filterZonesByStatus('All')" id="btn-filter-all" class="px-3 py-1.5 rounded-xl bg-[#B84A39] text-[#FFFDF8] transition shadow-sm">
+                All (10)
+              </button>
+              <button onclick="filterZonesByStatus('Critical')" id="btn-filter-critical" class="px-3 py-1.5 rounded-xl text-[#8C6D58] hover:text-[#900C3F] hover:bg-[#FADBD8] transition">
+                Critical
+              </button>
+              <button onclick="filterZonesByStatus('Warning')" id="btn-filter-warning" class="px-3 py-1.5 rounded-xl text-[#8C6D58] hover:text-[#9A7D0A] hover:bg-[#FCF3CF] transition">
+                Warning
+              </button>
+              <button onclick="filterZonesByStatus('Optimal')" id="btn-filter-optimal" class="px-3 py-1.5 rounded-xl text-[#8C6D58] hover:text-[#1E8449] hover:bg-[#D4EFDF] transition">
+                Optimal
+              </button>
+            </div>
+          </div>
+
+          <!-- Leaflet Map Box -->
+          <div id="zones-map" class="w-full flex-1 rounded-2xl border border-[#E8DFD1] overflow-hidden min-h-[440px] z-10"></div>
+        </div>
+
+        <!-- Zone Telemetry Directory Sidebar (5 Columns) -->
+        <div class="lg:col-span-5 pastel-card p-4 rounded-3xl border border-[#E8DFD1] flex flex-col max-h-[640px]">
+          
+          <!-- Search & Header -->
+          <div class="space-y-3 mb-3 px-2">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs font-bold text-[#3B2A22] uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-[#D98353]"></i> Zone Directory
+              </h3>
+              <span id="active-filter-label" class="text-xs text-[#D98353] font-bold">Showing All 10 Zones</span>
+            </div>
+
+            <!-- Search Field -->
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-[#A89284] text-xs"></i>
+              <input type="text" id="zone-search-input" onkeyup="handleZoneSearch()" placeholder="Search zone name or alert..." class="w-full bg-[#FAF6ED] border border-[#E8DFD1] rounded-2xl pl-9 pr-4 py-2.5 text-xs text-[#3B2A22] placeholder-[#A89284] focus:outline-none focus:border-[#B84A39] focus:ring-2 focus:ring-[#B84A39]/10 transition shadow-sm">
+            </div>
+          </div>
+
+          <!-- Scrollable Zone Cards List -->
+          <div id="zones-list" class="space-y-3 overflow-y-auto pr-1 flex-1">
+            <!-- Dynamic Zone Cards via zones-map.js -->
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="zones-map.js"></script>
+
+  <script>
+    /* Inline Auth & Clock Script */
+    function checkSessionState() {
+      const authScreen = document.getElementById('auth-screen');
+      const dashboardApp = document.getElementById('dashboard-app');
+
+      if (!authScreen || !dashboardApp) return;
+
+      const sessionUser = localStorage.getItem('sm_command_user');
+
+      if (sessionUser) {
+        authScreen.classList.add('hidden');
+        dashboardApp.classList.remove('hidden');
+        setTimeout(initZonesMap, 150);
+      } else {
+        authScreen.classList.remove('hidden');
+        dashboardApp.classList.add('hidden');
+      }
+    }
+
+    function handleInlineLogin(event) {
+      if (event) event.preventDefault();
+
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+      const errorBox = document.getElementById('login-error');
+
+      if (u === 'admin' && p === 'admin123') {
+        localStorage.setItem('sm_command_user', JSON.stringify({ 
+          name: 'Officer Admin', 
+          role: 'NMC Lead Operations'
+        }));
+        
+        if (errorBox) errorBox.classList.add('hidden');
+        checkSessionState();
+      } else {
+        if (errorBox) errorBox.classList.remove('hidden');
+      }
+      return false;
+    }
+
+    function handleInlineLogout() {
+      localStorage.removeItem('sm_command_user');
+      checkSessionState();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSessionState();
+
+      const timeElem = document.getElementById('live-time');
+      if (timeElem) {
+        const updateTime = () => {
+          timeElem.textContent = new Date().toLocaleTimeString();
+        };
+        updateTime();
+        setInterval(updateTime, 1000);
+      }
+    });
+  </script>
+  <!-- Include Nemo Chatbot Globally -->
+<script src="nemo-chatbot.js"></script>
+</body>
+</html>
