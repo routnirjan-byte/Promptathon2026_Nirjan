@@ -1,0 +1,95 @@
+// Handle Government Login Redirect
+function handleGovLogin(e) {
+  e.preventDefault();
+  const targetDomain = document.getElementById('gov-domain').value;
+  sessionStorage.setItem('scoc_gov_auth', 'true');
+  window.location.href = targetDomain;
+}
+
+// Dynamically Inject Universal Nav Header Across Sub-Pages
+document.addEventListener('DOMContentLoaded', () => {
+  const navContainer = document.getElementById('nav-header');
+  if (navContainer) {
+    navContainer.innerHTML = `
+      <header class="border-b border-slate-800 bg-slate-900 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-blue-600/20">
+            <i class="fa-solid fa-city"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-bold text-slate-100">Smart City Operations Center</h1>
+            <span class="text-xs text-blue-400 font-mono block">Gov Clearance Level: OFFICIAL</span>
+          </div>
+        </div>
+
+        <nav class="flex items-center gap-2 text-xs font-semibold">
+          <a href="dashboard.html" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+            <i class="fa-solid fa-gauge mr-1"></i> Dashboard
+          </a>
+          <a href="traffic.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-blue-500/50 text-blue-400 transition">
+            <i class="fa-solid fa-traffic-light mr-1"></i> Traffic
+          </a>
+          <a href="emergency.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-red-500/50 text-red-400 transition">
+            <i class="fa-solid fa-truck-medical mr-1"></i> Emergency
+          </a>
+          <a href="utility.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-amber-400 transition">
+            <i class="fa-solid fa-plug mr-1"></i> Utility
+          </a>
+          <a href="citizen.html" class="px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 text-emerald-400 transition">
+            <i class="fa-solid fa-bullhorn mr-1"></i> Citizen
+          </a>
+          <a href="index.html" class="ml-4 px-3.5 py-2 rounded-lg bg-red-950/60 border border-red-800/50 text-rose-300 hover:bg-red-900 transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </a>
+        </nav>
+      </header>
+    `;
+  }
+});
+
+// Chat Console Helpers
+function appendToConsole(html) {
+  const c = document.getElementById('chat-messages');
+  if (c) {
+    c.innerHTML += html;
+    c.scrollTop = c.scrollHeight;
+  }
+}
+
+function clearConsole() {
+  const c = document.getElementById('chat-messages');
+  if (c) {
+    c.innerHTML = `
+      <div class="bg-slate-950 border border-blue-900/40 p-4 rounded-xl text-slate-300 space-y-1">
+        <p class="font-bold text-blue-400">SCOC Orchestrator Engine Ready.</p>
+        <p class="text-slate-400 text-xs">Console cleared. Enter an incident report.</p>
+      </div>
+    `;
+  }
+}
+
+async function handleUserSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  appendToConsole(`
+    <div class="text-right">
+      <div class="inline-block bg-blue-950/80 border border-blue-800/50 text-blue-100 p-3 rounded-xl text-left max-w-[85%] font-sans text-xs">
+        <span class="text-[10px] text-blue-400 font-mono font-bold block mb-0.5">[OPERATOR REPORT]</span>
+        ${text}
+      </div>
+    </div>
+  `);
+
+  input.value = '';
+  await processIncidentPipeline(text, (stepHtml) => appendToConsole(stepHtml));
+}
+
+function triggerPreset(type) {
+  const input = document.getElementById('user-input');
+  if (type === 'grid_fire') input.value = "CRITICAL: Substation 4 fire and transformer explosion reported.";
+  if (type === 'water_flood') input.value = "ALERT: Water main burst on North Sector Highway causing severe flooding.";
+  handleUserSubmit(new Event('submit'));
+}
