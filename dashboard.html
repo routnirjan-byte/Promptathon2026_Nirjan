@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Dashboard | SCOC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <div id="nav-header"></div>
+
+  <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] w-full mx-auto">
+    <!-- Quick Presets Sidebar -->
+    <section class="lg:col-span-4 space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-2">
+          <i class="fa-solid fa-bolt text-amber-400 mr-2"></i> Trigger Scenario Simulation
+        </h2>
+        <div class="space-y-2.5">
+          <button onclick="triggerPreset('grid_fire')" class="w-full p-3.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-red-500/50 rounded-xl text-left transition space-y-1 block">
+            <span class="font-bold text-red-400 text-sm block"><i class="fa-solid fa-fire mr-1.5"></i> Major Substation Fire</span>
+            <span class="text-xs text-slate-400 block">Triggers Utility, Emergency, Traffic, and Citizen Agents</span>
+          </button>
+          <button onclick="triggerPreset('water_flood')" class="w-full p-3.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/50 rounded-xl text-left transition space-y-1 block">
+            <span class="font-bold text-blue-400 text-sm block"><i class="fa-solid fa-water mr-1.5"></i> Water Main Burst</span>
+            <span class="text-xs text-slate-400 block">Triggers Utility, Traffic, and Citizen Agents</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-2">
+          <i class="fa-solid fa-network-wired text-blue-400 mr-2"></i> Sub-Agent System Status
+        </h2>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><span class="font-bold text-blue-300 block mb-1">Traffic</span><span class="text-emerald-400 font-mono">Active</span></div>
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><span class="font-bold text-red-300 block mb-1">Emergency</span><span class="text-emerald-400 font-mono">Active</span></div>
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><span class="font-bold text-amber-300 block mb-1">Utility</span><span class="text-emerald-400 font-mono">Active</span></div>
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><span class="font-bold text-emerald-300 block mb-1">Citizen</span><span class="text-emerald-400 font-mono">Active</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Console Section -->
+    <section class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-[720px] shadow-2xl overflow-hidden">
+      <div class="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
+        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider"><i class="fa-solid fa-robot text-blue-400 mr-2"></i> Agentic Orchestrator Console</h2>
+        <button onclick="clearConsole()" class="text-xs text-slate-400 hover:text-slate-200"><i class="fa-solid fa-rotate-right mr-1"></i> Clear</button>
+      </div>
+
+      <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-4 text-sm font-mono">
+        <div class="bg-slate-950 border border-blue-900/40 p-4 rounded-xl text-slate-300 space-y-1">
+          <p class="font-bold text-blue-400">SCOC Orchestrator Engine Ready.</p>
+          <p class="text-slate-400 text-xs">Enter a report below or run a simulation to watch the multi-agent workflow execute.</p>
+        </div>
+      </div>
+
+      <form onsubmit="handleUserSubmit(event)" class="p-4 bg-slate-950 border-t border-slate-800 flex gap-3">
+        <input type="text" id="user-input" placeholder="Enter incident report..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition">Dispatch</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="agents.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
